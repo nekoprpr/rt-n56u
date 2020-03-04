@@ -1,17 +1,10 @@
-name: Build MT7621-2
+name: GHL
 
 on: 
   release:
     types: [published]
-#  push:
-#    tags:
-#    - 'v*'
-  #  branches: 
-  #    - master
-  schedule:
-    - cron: 0 17 * * 4
-#  watch:
-   # types: [started]
+  watch:
+    types: [started]
 
 jobs:
   build:
@@ -33,12 +26,12 @@ jobs:
       run: |
         cd toolchain-mipsel
         mkdir -p toolchain-3.4.x
-        wget https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz
+        wget https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz
         tar -xvf mipsel-linux-uclibc.tar.xz -C toolchain-3.4.x
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "JDC-1-5.0 B70 NEWIFI-D1 GHL K2P-USB-5.0 NEWIFI3 MI-R3G"
+        TNAME: GHL
       run: |
         cwd=`pwd`
         CONFIG_TOOLCHAIN_DIR=${cwd//\//\\\/}\\/toolchain-mipsel
@@ -84,7 +77,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
         echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config #v2ray二进制文件
         echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config #集成trojan执行文件，如果不集成，会从网上下载下来执行，不影响正常使用
-        echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=y" >> .config #KP广告过滤
+        echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config #KP广告过滤
         echo "CONFIG_FIRMWARE_INCLUDE_CADDY=y" >> .config #在线文件管理服务
         echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #集成caddu执行文件，此文件有13M,请注意固件大小。如果不集成，会从网上下载下来执行，不影响正常使用
         echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=y" >> .config
@@ -98,18 +91,9 @@ jobs:
         sudo ./build_firmware_bkye $m
         sudo mv -f images/*.trx /opt/images/
         done
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v1-release
+    - name : Upload packages
+      uses: actions/upload-artifact@master
+      if: always()
       with:
-        repo_token: ${{ secrets.R_TOKEN }}
-        file: /opt/images/*.trx
-        tag: AtuoBuild
-        overwrite: true
-        file_glob: true
-    - uses: ncipollo/release-action@v1
-      with:
-       bodyFile: "changelog.md"
-       tag: AtuoBuild
-       allowUpdates: true
-       name: Padavan-firmware
-       token: ${{ secrets.R_TOKEN }}
+        name: Padavan-packages
+        path: /opt/images
